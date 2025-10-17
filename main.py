@@ -52,9 +52,9 @@ data_filename = 'training_segment-1005081002024129653_5313_150_5333_150_with_cam
 show_only_frames = [0,200] # show only frames in interval for debugging
 
 ## Prepare Waymo Open Dataset file for loading
-data_fullpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dataset\\tfrecords', data_filename) # adjustable path in case this script is called from another working directory
-frame_data_fullpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dataset\\frame_data')
-datafile = WaymoDataFileReader(data_fullpath)
+camera_data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dataset\\camera_detections', data_filename) # adjustable path in case this script is called from another working directory
+lidar_data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dataset\\lidar_detections')
+datafile = WaymoDataFileReader(camera_data_path)
 datafile_iter = iter(datafile)  # initialize dataset iterator
 
 ## Initialize object detection
@@ -111,11 +111,11 @@ while True:
 
         ## Lidar point-cloud from range image    
         print('loading lidar point-cloud from result file')
-        lidar_pcl = load_object_from_file(frame_data_fullpath, data_filename, 'lidar_pcl', cnt_frame)
+        lidar_pcl = load_object_from_file(lidar_data_path, data_filename, 'lidar_pcl', cnt_frame)
             
         ## Lidar birds-eye view (bev)
         print('loading birds-eve view from result file')
-        lidar_bev = load_object_from_file(frame_data_fullpath, data_filename, 'lidar_bev', cnt_frame)
+        lidar_bev = load_object_from_file(lidar_data_path, data_filename, 'lidar_bev', cnt_frame)
 
         ## 3D object detection
         if (configs_det.use_labels_as_objects==True):
@@ -123,12 +123,12 @@ while True:
             detections = tools.convert_labels_into_objects(frame.laser_labels, configs_det)
         else:
             print('loading detected objects from result file')
-            detections = load_object_from_file(frame_data_fullpath, data_filename, 'detections_' + configs_det.arch + '_' + str(configs_det.conf_thresh), cnt_frame) 
+            detections = load_object_from_file(lidar_data_path, data_filename, 'detections_' + configs_det.arch + '_' + str(configs_det.conf_thresh), cnt_frame) 
 
 
         ## Valid object labels
         print('loading object labels and validation from result file')
-        valid_label_flags = load_object_from_file(frame_data_fullpath, data_filename, 'valid_labels', cnt_frame)            
+        valid_label_flags = load_object_from_file(lidar_data_path, data_filename, 'valid_labels', cnt_frame)            
 
 
         #################################
@@ -185,7 +185,7 @@ while True:
                                 valid_label_flags, image, camera, configs_det)
         if make_tracking_movie:
             # save track plots to file
-            fname = frame_data_fullpath + '/tracking%03d.png' % cnt_frame
+            fname = lidar_data_path + '/tracking%03d.png' % cnt_frame
             print('Saving frame', fname)
             fig.savefig(fname)
 
@@ -206,4 +206,4 @@ plot_rmse(manager, all_labels, configs_det)
 
 ## Make movie from tracking results    
 if make_tracking_movie:
-    make_movie(frame_data_fullpath)
+    make_movie(lidar_data_path)
